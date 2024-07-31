@@ -1,0 +1,157 @@
+---
+title: "Detroit Crime EDA"
+output: html_document
+date: "2024-07-29"
+author: "Jason Luo"
+---
+
+```{r ,message = FALSE, warning=FALSE}
+rm(list = ls())
+
+setwd('C:/Users/jluo1/OneDrive/Documents/statsProj')
+#install.packages('httr2', type = 'win.binary')
+library(tidyverse)
+library(lubridate)
+library(osmdata)
+
+# Importing cleaned data
+df <- read.csv('RMS_Crime_Incidents_Cleaned.csv')
+```
+
+
+``` {r}
+# Summary statistics
+summary(df)
+```
+
+### Crimes Each Year
+The data set likely didn't have crime rates for the earlier years, but gathered
+lots of data for the years 2021-2024. In general, crime is very high in Detroit,
+with a maximum of over 80000 crimes for one year.
+``` {r}
+crimes_per_year <- df %>%
+  group_by(year) %>%
+  summarise(num_crimes = n())
+
+ggplot() + 
+  geom_line(data = crimes_per_year, aes(x = year, y = num_crimes)) + 
+  theme_minimal() + 
+  ggtitle("Number of Crimes Per Year") + 
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  xlab("Year") + 
+  ylab("Number of Crimes")
+
+```
+
+### Crimes Each Hour
+``` {r}
+crimes_per_hour <- df %>%
+  group_by(hour_of_day) %>%
+  summarise(num_crimes = n())
+
+ggplot() + 
+  geom_line(data = crimes_per_hour, aes(x = hour_of_day, y = num_crimes)) + 
+  theme_minimal() + 
+  ggtitle("Number of Crimes Per Hour") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Hour") + 
+  ylab("Number of Crimes")
+
+```
+
+### Frequency of Types of Crimes
+``` {r}
+crimes_by_category <- df %>%
+  group_by(offense_category) %>%
+  summarise(num_crimes = n())
+
+ggplot(data = crimes_by_category, aes(x = offense_category, y = num_crimes, fill = offense_category)) + 
+  geom_bar(stat = 'identity', position = 'dodge') + 
+  ggtitle("Number of Crimes By Category") + 
+  xlab("Offense Type") + 
+  ylab("Number of Crimes") +
+  theme_minimal() + 
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+
+
+```
+
+### Crime Heat Map
+``` {r}
+### Heatmap of Year vs Hour
+crimes_by_year_month <- df %>%
+  group_by(year, month) %>%
+  summarise(num_crimes = n(), .groups = 'drop') %>%
+  pivot_wider(names_from = month, values_from = num_crimes)
+
+crimes_by_year_month <- crimes_by_year_month[, order(as.numeric(names(crimes_by_year_month)))]  
+months <- month.name
+colnames(crimes_by_year_month)[1:12] <- months
+crimes_by_year_month[is.na(crimes_by_year_month)] <- 0
+
+crimes_by_year_month <- pivot_longer(data = crimes_by_year_month, cols = -year, names_to = "month", values_to = "num_crimes")
+crimes_by_year_month$year <- as.factor(crimes_by_year_month$year)
+
+
+ggplot(data = crimes_by_year_month, aes(x = month, y = year, fill = num_crimes)) + 
+  geom_tile(color = 'grey') +
+  geom_text(aes(label = num_crimes), color = 'black', size = 2.5) + 
+  scale_fill_continuous(low = 'orange', high = 'darkgreen' ,name = 'Number of Crimes') + 
+  theme(axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 7))
+
+```
+
+### Crimes Per Year on Map
+``` {r}
+# Defining map
+detroit_boundaries <- getbb(place_name = "Detroit") %>%
+  opq(timeout = 30) %>%
+  add_osm_feature(key = "highway", 
+                  value = c("motorway", "primary", "secondary", "tertiary")) %>%
+  osmdata_sf()
+
+
+ggplot() + 
+  geom_sf(data = detroit_boundaries$osm_lines, inherit.aes = FALSE,
+          color = "black",
+          size = 0.2) +
+  ggtitle("Map of Detroit") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+
+
+``` {r}
+### Map of points where crimes occured
+plot_crimes <- function(year) { 
+  
+  crimes_plot <- ggplot(data = df[df$year == year, ], aes(x = longitude, y = latitude, 
+                                                          color = council_district)) + 
+    geom_point(alpha = 0.1) + 
+    geom_sf(data = detroit_boundaries$osm_lines, inherit.aes = FALSE,
+          color = "black",
+          size = 0.2) +
+    theme_minimal() + 
+    theme(plot.title = element_text(hjust = 0.5)) +
+    ggtitle(paste0("Crime for ", year))
+    
+  
+  crimes_plot <- crimes_plot + geom_text(x = -83, y = 42.25, 
+                            label = paste0("Number of Crimes: ", nrow(df[df$year == year, ])), 
+                            check_overlap = TRUE,
+                            color = "darkred",
+                            size = 3)
+  
+  return(crimes_plot)
+}
+
+
+
+for (year in unique(df$year)) {
+  print(plot_crimes(year))
+}
+
+```

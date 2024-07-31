@@ -1,0 +1,119 @@
+---
+title: "Simulations"
+output: html_document
+date: "2024-07-30"
+---
+
+```{r, message = FALSE, warning=FALSE}
+rm(list = ls())
+
+setwd('C:/Users/jluo1/OneDrive/Documents/statsProj')
+library(tidyverse)
+
+# Importing cleaned data
+df <- read.csv('RMS_Crime_Incidents_Cleaned.csv')
+```
+### Inter-arrival Times
+
+Inter-arrival times follow an exponential distribution. The lambda parameter is
+estimated using the sample mean from our data.
+``` {r}
+
+ggplot(data = df, aes(x = interarrival_time)) + 
+  geom_histogram(fill = 'darkblue', alpha = 0.6, bins = 30, binwidth = 0.25) + 
+  ggtitle("Distribution of Inter-arrival Times of Incidents") + 
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+sample_mean <- mean(df$interarrival_time)
+lambda <- 1/sample_mean
+```
+The sample mean is `r sample_mean` and thus the value of lambda is `r lambda`
+
+Since inter-arrival times are exponentially distributed, a sum of inter-arrival 
+random variables has a gamma distribution. This sum is the arrival times (till the nth arrival)
+
+``` {r}
+n <- 100 # 100 arrivals
+set.seed(1234)
+
+generate_arrival_times <- function(n) {
+  interarrival_time_samples <- rexp(n = n, rate = lambda)
+  arrival_time_sample <- sum(interarrival_time_samples)
+  return(arrival_time_sample)
+}
+
+arrival_times <- replicate(1000, generate_arrival_times(n)) # generates 1000 samples of arrival times
+arrival_times_df <- as.data.frame(arrival_times)
+```
+
+``` {r, warning = FALSE}
+
+gamma_samples <- rgamma(n = 1000, shape = n, rate = lambda)
+gamma_samples_df <- as.data.frame(gamma_samples)
+
+# Plot 2 ways to simulate fist n arrival times, which follow a gamma distribution
+ggplot() + 
+  geom_histogram(data = gamma_samples_df, aes(x = gamma_samples), fill = 'purple', alpha = 0.4) + 
+  geom_histogram(data = arrival_times_df, aes(x = arrival_times), fill = 'red', alpha = 0.4) +
+  ggtitle(paste0("Theoretical Distribution(s) of Arrival Times of First " , n, " Incidents")) + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_minimal()
+
+```
+
+We can check how accurate our sample of inter-arrival times follows an exponential distribution
+``` {r}
+set.seed(12345)
+theoretical_sample <- rexp(n = dim(df)[1], rate = lambda)
+emperical_sample <- df$interarrival_time
+
+qqplot(emperical_sample, theoretical_sample, main = paste0("QQPlot For Inter-arrival Times of Incidents"))
+abline(a = 0, b = 1, col = 'orange')
+```
+
+### Simulating a Poisson Process
+We estimate the rate parameter for our poisson process by computing
+`num_incidents  / total_time `
+``` {r}
+num_incidents <- nrow(df)
+total_time <- as.numeric(difftime(df$incident_timestamp[dim(df)[1]], df$incident_timestamp[1], units = 'hours'))
+rate <- num_incidents / total_time
+
+```
+
+There are `r rate` incidents an hour. We can now simulate a poisson process
+
+``` {r}
+set.seed(12345)
+
+pois_process <- function(num_arrivals, lambda) {
+  arrival_time_stamps <- c() # vector of arrival times
+  
+  for(i in 1:num_arrivals) {
+    inter_arrival_time <- rexp(n = 1, rate = lambda) # inter-arrival times ~ exp(lambda)
+    
+    if (i == 1) {
+      temp <- 0
+    } else {
+      temp <- arrival_time_stamps[i-1] 
+    }
+    
+    arrival_time <- sum(temp, inter_arrival_time) 
+    # sum of N inter-arrival times is the arrival time for the Nth event
+    arrival_time_stamps <- c(arrival_time_stamps, arrival_time) 
+    # append arrival times to vector
+  }
+  
+  Nt <- 1:length(arrival_time_stamps)
+  plot(c(0, Nt) ~ c(0, arrival_time_stamps), type = 's', main = paste0("Simulated " , num_arrivals, " Incidents"),
+       xlab = "Arrival Time", ylab = "Number of Incidents")
+  
+}
+
+
+for (i in c(5,10,20,50, 100)) {
+  pois_process(num_arrivals = i, lambda = rate)
+}
+```
+
