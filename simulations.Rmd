@@ -121,3 +121,39 @@ for (i in c(5,10,20,50, 100)) {
 }
 ```
 
+
+### Binomial Poisson Model
+``` {r}
+categories <- unique(df$offense_category)
+probs <- c()
+
+for (i in 1:length(categories)) {
+  prob_of_category <- sum(df$offense_category == categories[i]) / nrow(df)
+  print(paste0("Probability of commiting ", categories[i], " offense: ", prob_of_category))
+  probs[i] <- prob_of_category
+}
+```
+
+Binomial Poisson model for simulating the number of particular incidents
+
+``` {r}
+set.seed(123)
+
+binPois <- function(n, prob) {
+  y <- rpois(n, lambda = lambda)
+  x_y <- rbinom(n, size = y, prob = prob)
+  
+  x_y_df <- as.data.frame(x_y)
+  
+  graph <- ggplot(data = x_y_df, aes(x_y)) +
+    geom_histogram(bins = 20, alpha = 0.6, fill = "red") +
+    theme_minimal() +
+    ggtitle(paste0("Estimated Distribution of ", n, " Incidents")) + 
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  return(graph)
+}
+
+binPois(n = 1000, prob = probs[1])
+```
+
