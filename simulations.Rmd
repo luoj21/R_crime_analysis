@@ -2,12 +2,13 @@
 title: "Simulations"
 output: html_document
 date: "2024-07-30"
+author: "Jason Luo"
 ---
 
 ```{r, message = FALSE, warning=FALSE}
 rm(list = ls())
 
-setwd('C:/Users/jluo1/OneDrive/Documents/statsProj')
+setwd('/Users/jasonluo/Documents/R_crime_analysis')
 library(tidyverse)
 
 # Importing cleaned data
@@ -28,7 +29,9 @@ ggplot(data = df, aes(x = interarrival_time)) +
 sample_mean <- mean(df$interarrival_time)
 lambda <- 1/sample_mean
 ```
-The sample mean is `r sample_mean` and thus the value of lambda is `r lambda`
+The sample mean is `r sample_mean` and thus the value of lambda is `r lambda`. This
+means there are `r sample_mean` hours between incidents and there are on average `r lambda`
+incidents per hour.
 
 Since inter-arrival times are exponentially distributed, a sum of inter-arrival 
 random variables has a gamma distribution. This sum is the arrival times (till the nth arrival)
@@ -82,7 +85,8 @@ rate <- num_incidents / total_time
 
 ```
 
-There are `r rate` incidents an hour. We can now simulate a poisson process
+There are `r rate` incidents an hour. This is the exact same as the lambda
+value from the exponential distribution computed prior. We can now simulate a poisson process:
 
 ``` {r}
 set.seed(12345)
