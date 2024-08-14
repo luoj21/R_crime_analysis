@@ -1,9 +1,9 @@
 rm(list = ls())
 
-setwd('C:/Users/jluo1/OneDrive/Documents/statsProj')
+setwd('/Users/jasonluo/Documents/R_crime_analysis')
 library(tidyverse)
 library(lubridate)
-library(chron)
+#library(chron)
 
 # Data Info: https://data.detroitmi.gov/datasets/detroitmi::rms-crime-incidents/about
 df <- read.csv('RMS_Crime_Incidents.csv')

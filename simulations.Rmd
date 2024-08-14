@@ -1,6 +1,6 @@
 ---
 title: "Simulations"
-output: html_document
+output: pdf_document
 date: "2024-07-30"
 author: "Jason Luo"
 ---
@@ -71,7 +71,7 @@ set.seed(12345)
 theoretical_sample <- rexp(n = dim(df)[1], rate = lambda)
 emperical_sample <- df$interarrival_time
 
-qqplot(emperical_sample, theoretical_sample, main = paste0("QQPlot For Inter-arrival Times of Incidents"))
+qqplot(theoretical_sample, emperical_sample, main = paste0("QQPlot For Inter-arrival Times of Incidents"))
 abline(a = 0, b = 1, col = 'orange')
 ```
 
@@ -140,13 +140,13 @@ Binomial Poisson model for simulating the number of particular incidents
 set.seed(123)
 
 binPois <- function(n, prob) {
-  y <- rpois(n, lambda = lambda)
-  x_y <- rbinom(n, size = y, prob = prob)
-  
+  y <- rpois(n, lambda = lambda) # y ~ pois
+  x_y <- rbinom(n, size = y, prob = prob) # x | y ~ bin
+
   x_y_df <- as.data.frame(x_y)
   
   graph <- ggplot(data = x_y_df, aes(x_y)) +
-    geom_histogram(bins = 20, alpha = 0.6, fill = "red") +
+    geom_histogram(bins = 20, alpha = 0.6, fill = "lightgreen") +
     theme_minimal() +
     ggtitle(paste0("Estimated Distribution of ", n, " Incidents")) + 
     theme(plot.title = element_text(hjust = 0.5))
@@ -154,6 +154,6 @@ binPois <- function(n, prob) {
   return(graph)
 }
 
-binPois(n = 1000, prob = probs[1])
+binPois(n = 10000, prob = max(probs))
 ```
 

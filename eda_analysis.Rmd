@@ -1,6 +1,6 @@
 ---
 title: "Detroit Crime EDA"
-output: html_document
+output: pdf_document
 date: "2024-07-29"
 author: "Jason Luo"
 ---
@@ -8,7 +8,7 @@ author: "Jason Luo"
 ```{r ,message = FALSE, warning=FALSE}
 rm(list = ls())
 
-setwd('C:/Users/jluo1/OneDrive/Documents/statsProj')
+setwd('/Users/jasonluo/Documents/R_crime_analysis')
 #install.packages('httr2', type = 'win.binary')
 library(tidyverse)
 library(lubridate)
