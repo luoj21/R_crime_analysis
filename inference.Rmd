@@ -1,0 +1,68 @@
+---
+title: "Inference"
+author: "Jason Luo"
+date: "2025-01-02"
+output: pdf_document
+---
+
+```{r, message = FALSE, warning=FALSE}
+rm(list = ls())
+
+setwd('/Users/jasonluo/Documents/R_crime_analysis')
+library(tidyverse)
+
+# Importing cleaned data
+df <- read.csv('RMS_Crime_Incidents_Cleaned.csv')
+
+unique(df$year)
+```
+
+We run a ${\chi}^2$ test for Homogeneity, testing if there is a difference in the amount of crimes that occur in each zipcode per year
+``` {r}
+
+get_num_crimes_by_zip_year <- function(data, yr) {
+  
+  
+  print(paste0("Year: ", yr))
+  crimes <- data %>%
+    select(year, zip_code) %>%
+    filter(year == yr) %>%
+    group_by(zip_code) %>%
+    summarise(num_crimes = n())
+  
+  return(crimes)
+}
+
+
+num_crimes_by_zip_year <- list()
+years = c(2021,2022,2023)
+
+for (i in seq_along(years)) {
+  crimes <- get_num_crimes_by_zip_year(df, years[i]) 
+  num_crimes_by_zip_year[[i]] <- crimes$num_crimes
+}
+
+```
+
+``` {r}
+zip_codes <- crimes$zip_code # all 3 years have the same zip codes 
+contingency_table <- rbind(num_crimes_by_zip_year[[1]], num_crimes_by_zip_year[[2]], num_crimes_by_zip_year[[3]])
+dimnames(contingency_table) <- list(Year = years, Zipcode = zip_codes)
+
+contingency_table
+```
+Displaying the ${\chi}^2$ test results
+``` {r}
+Xsq <- chisq.test(contingency_table)
+Xsq
+```
+
+Other related quantities:
+``` {r}
+Xsq$observed   # observed counts
+Xsq$expected   # expected counts under the null
+Xsq$residuals  # Pearson residuals
+Xsq$stdres     # standardized residual
+```
+
+
