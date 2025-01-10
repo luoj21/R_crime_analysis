@@ -73,20 +73,44 @@ council district, year of occurence, and zip code
 
 df_agg <- df %>%
   group_by(zip_code, year, council_district, neighborhood) %>%
-  summarise(num_crimes = n())
+  summarise(num_crimes = n()) %>%
+  mutate(zip_code = as.factor(zip_code))
 
 model1 <- glm(formula = num_crimes ~ neighborhood + council_district + year + zip_code, 
               data = df_agg, family = poisson(link = 'log'))
 
-summary(model1)
+#summary(model1)
 ```
+
+Plotting values of coefficients for the various qualitative variables:
+``` {r}
+length(model1$coefficients)
+
+ggplot() +
+  geom_line(aes(x = 1:206, y = model1$coefficients[2:207])) + 
+  #scale_x_discrete(labels = names(model1$coefficients[2:207])) +
+  scale_x_continuous(breaks = 1:206, labels = names(model1$coefficients[2:207])) +
+  xlab("Estimated Neighborhood Coefficients") +
+  ylab("Value") + 
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 2)) 
+
+ggplot() +
+  geom_line(aes(x = 1:29, y = model1$coefficients[210:238])) + 
+  scale_x_continuous(breaks = 1:29, labels = names(model1$coefficients[210:238])) +
+  xlab("Estimated Zip Code Coefficients") +
+  ylab("Value") + 
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) 
+```
+
+
 ```{r}
 model2 <- glm(formula = num_crimes ~ council_district + year + zip_code, 
               data = df_agg, family = poisson(link = 'log'))
 
-summary(model2)
-
+#summary(model2)
 ```
-We see that comparing models, model 1 has a AIC of `r model1$aic` vs model 2 
+Comparing models, model 1 has a AIC of `r model1$aic` vs model 2 
 which has `r model2$aic`. The model with the smaller AIC considered better performing in terms of 
 complexity and performance
