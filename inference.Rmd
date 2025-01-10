@@ -10,6 +10,7 @@ rm(list = ls())
 
 setwd('/Users/jasonluo/Documents/R_crime_analysis')
 library(tidyverse)
+library(faraway)
 
 # Importing cleaned data
 df <- read.csv('RMS_Crime_Incidents_Cleaned.csv')
@@ -79,7 +80,22 @@ df_agg <- df %>%
 model1 <- glm(formula = num_crimes ~ neighborhood + council_district + year + zip_code, 
               data = df_agg, family = poisson(link = 'log'))
 
-#summary(model1)
+# Residuals 
+#plot(model1$fitted.values, model1$residuals, xlab="Fitted",ylab="Residuals")
+#abline(h=0, col = 'red')
+ggplot() + 
+  geom_point(aes(x = model1$fitted.values, y = model1$residuals)) +
+  geom_abline(intercept = 0, slope = 0, color = 'blue') + 
+  xlab('Fitted') +
+  ylab('Residuals') +
+  ggtitle('Fitted Values vs Residuals For Model 1')
+
+# Half-Norm plot of residuals for checking outliers
+halfnorm(residuals(model1))
+
+# Checking relationship between mean and variance
+plot(log(fitted(model1)),log((df_agg$num_crimes-fitted(model1))^2), xlab=expression(hat(mu)),ylab=expression((y-hat(mu))^2))
+abline(0,1, col = 'red')
 ```
 
 Plotting values of coefficients for the various qualitative variables:
@@ -109,8 +125,22 @@ ggplot() +
 model2 <- glm(formula = num_crimes ~ council_district + year + zip_code, 
               data = df_agg, family = poisson(link = 'log'))
 
-#summary(model2)
+# Residuals 
+ggplot() + 
+  geom_point(aes(x = model2$fitted.values, y = model2$residuals)) +
+  geom_abline(intercept = 0, slope = 0, color = 'lightgreen') + 
+  xlab('Fitted') +
+  ylab('Residuals') +
+  ggtitle('Fitted Values vs Residuals For Model 2')
+
+# Half-Norm plot of residuals for checking outliers
+halfnorm(residuals(model2))
+
+# Checking relationship between mean and variance
+plot(log(fitted(model2)),log((df_agg$num_crimes-fitted(model2))^2), xlab=expression(hat(mu)),ylab=expression((y-hat(mu))^2))
+abline(0,1, col = 'red')
 ```
+
 Comparing models, model 1 has a AIC of `r model1$aic` vs model 2 
-which has `r model2$aic`. The model with the smaller AIC considered better performing in terms of 
-complexity and performance
+which has `r model2$aic`. The model with the smaller AIC considered better performing 
+in terms of complexity and performance
