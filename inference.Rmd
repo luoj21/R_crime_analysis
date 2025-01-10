@@ -17,6 +17,7 @@ df <- read.csv('RMS_Crime_Incidents_Cleaned.csv')
 unique(df$year)
 ```
 
+## ${\chi}^2$ test 
 We run a ${\chi}^2$ test for Homogeneity, testing if there is a difference in the amount of crimes that occur in each zipcode per year
 ``` {r}
 
@@ -64,5 +65,28 @@ Xsq$expected   # expected counts under the null
 Xsq$residuals  # Pearson residuals
 Xsq$stdres     # standardized residual
 ```
+## Poisson Regression
+Using poisson regression to model number (count) of crime incidents based off of neighborhood,
+council district, year of occurence, and zip code
 
+``` {r}
 
+df_agg <- df %>%
+  group_by(zip_code, year, council_district, neighborhood) %>%
+  summarise(num_crimes = n())
+
+model1 <- glm(formula = num_crimes ~ neighborhood + council_district + year + zip_code, 
+              data = df_agg, family = poisson(link = 'log'))
+
+summary(model1)
+```
+```{r}
+model2 <- glm(formula = num_crimes ~ council_district + year + zip_code, 
+              data = df_agg, family = poisson(link = 'log'))
+
+summary(model2)
+
+```
+We see that comparing models, model 1 has a AIC of `r model1$aic` vs model 2 
+which has `r model2$aic`. The model with the smaller AIC considered better performing in terms of 
+complexity and performance
